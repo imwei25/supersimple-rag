@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ## 使用
 1. 把 PDF / Word 放入 `docs_kb/`
 2. 建库: `python ingest.py`
-3. 启 API: `python api.py`  → `http://<IP>:8000/chat`
+3. 启 API: `python api.py`  → `http://<IP>:8001/chat`
 4. 启 WebUI: `python webui.py` → `http://<IP>:7860`
 
 ## 配置
