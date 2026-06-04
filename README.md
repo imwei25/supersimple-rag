@@ -37,4 +37,4 @@ pip install -r requirements.txt
 
 ## 局域网访问
 host 已设为 `0.0.0.0`。用 `ip addr`(Linux)/`ipconfig`(Windows)查本机 IP,
-确保防火墙放行 8000 / 7860 端口,同网段设备即可访问。
+确保防火墙放行 8001 / 7860 端口,同网段设备即可访问。
