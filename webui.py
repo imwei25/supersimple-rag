@@ -30,11 +30,28 @@ def format_think(text: str) -> str:
     )
 
 
+def format_chunks(chunks: list) -> str:
+    """把召回的片段渲染为可折叠区块。"""
+    if not chunks:
+        return ""
+    parts = []
+    for i, c in enumerate(chunks, 1):
+        parts.append(f"**[{i}] 来源:{c['source']}**\n\n{c['text']}")
+    body = "\n\n---\n\n".join(parts)
+    return (
+        f"\n\n<details><summary>🔍 召回片段({len(chunks)} 条,点击展开)</summary>\n\n"
+        f"{body}\n\n</details>"
+    )
+
+
 def respond(message, history):
     answer = ""
     sources = []
+    chunks = []
     for ev in engine.answer_stream(message):
-        if ev["type"] == "token":
+        if ev["type"] == "chunks":
+            chunks = ev["data"]
+        elif ev["type"] == "token":
             answer += ev["data"]
             yield format_think(answer)
         else:
@@ -42,6 +59,7 @@ def respond(message, history):
     final = format_think(answer)
     if sources:
         final += "\n\n---\n📚 来源: " + ", ".join(sources)
+    final += format_chunks(chunks)
     yield final
 
 

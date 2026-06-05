@@ -2,8 +2,8 @@ llm:
   provider: ollama
   model: minicpm5-1b
   ollama_base_url: http://localhost:11434
-  temperature: 0.3
-  max_tokens: 1024
+  temperature: 0.2
+  max_tokens: 2096
 
 embedding:
   provider: sentence-transformers
@@ -23,8 +23,8 @@ retrieval:
   hybrid: true
 
 split:
-  chunk_size: 500
-  chunk_overlap: 80
+  chunk_size: 1000
+  chunk_overlap: 180
 
 server:
   api_host: 0.0.0.0

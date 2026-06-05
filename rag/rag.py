@@ -48,6 +48,9 @@ class RagEngine:
             yield {"type": "sources", "data": []}
             return
         hits = self.retriever.retrieve(question)
+        # 先把召回的片段抛出,便于前端/调用方查看检索结果
+        yield {"type": "chunks",
+               "data": [{"source": h["source"], "text": h["text"]} for h in hits]}
         prompt = self._build_prompt(question, hits)
         for token in self.provider.stream(prompt):
             yield {"type": "token", "data": token}
