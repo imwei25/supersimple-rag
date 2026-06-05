@@ -10,17 +10,39 @@ cfg = load_config()
 engine = RagEngine(cfg)
 
 
+def format_think(text: str) -> str:
+    """把 <think>...</think> 推理内容渲染为可折叠区块,最终答案正常显示。
+    流式过程中 think 未闭合时默认展开,闭合后折叠。"""
+    if "<think>" not in text:
+        return text
+    after = text.split("<think>", 1)[1]
+    if "</think>" in after:
+        think, answer = after.split("</think>", 1)
+        block = (
+            f"<details><summary>💭 思考过程(点击展开)</summary>\n\n"
+            f"{think.strip()}\n\n</details>\n\n"
+        )
+        return block + answer.strip()
+    # 仍在思考中
+    return (
+        f"<details open><summary>💭 思考中…</summary>\n\n"
+        f"{after.strip()}\n\n</details>"
+    )
+
+
 def respond(message, history):
     answer = ""
     sources = []
     for ev in engine.answer_stream(message):
         if ev["type"] == "token":
             answer += ev["data"]
-            yield answer
+            yield format_think(answer)
         else:
             sources = ev["data"]
+    final = format_think(answer)
     if sources:
-        yield answer + "\n\n---\n📚 来源: " + ", ".join(sources)
+        final += "\n\n---\n📚 来源: " + ", ".join(sources)
+    yield final
 
 
 demo = gr.ChatInterface(
