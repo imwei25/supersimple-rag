@@ -9,6 +9,10 @@ from docx import Document
 
 logger = logging.getLogger(__name__)
 
+# pypdf 对不规范 PDF 会刷大量无害警告(如 "Multiple definitions in dictionary"),
+# 不影响文本抽取,这里压制到 ERROR 级别。
+logging.getLogger("pypdf").setLevel(logging.ERROR)
+
 
 def _read_pdf(path: Path) -> str:
     reader = PdfReader(str(path))
