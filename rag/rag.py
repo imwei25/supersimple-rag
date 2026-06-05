@@ -6,6 +6,8 @@ from rag.config import Config
 from rag.embedder import Embedder
 from rag.vectorstore import VectorStore
 from rag.retriever import Retriever
+from rag.loader import load_documents
+from rag.splitter import split_text
 from rag.providers.factory import make_provider
 
 PROMPT_TEMPLATE = """你是一个严谨的中文问答助手。请仅根据下面的【已知信息】回答【问题】。
@@ -55,6 +57,29 @@ class RagEngine:
                 seen.add(h["source"])
                 sources.append(h["source"])
         yield {"type": "sources", "data": sources}
+
+    def rebuild_index(self) -> Dict[str, Any]:
+        """清空并重建知识库:扫描 docs_dir → 切分 → 编码 → 入库 → 建 BM25。
+        复用已加载的 embedder,返回统计信息。"""
+        docs = load_documents(self.cfg.docs_dir())
+        self.store.reset()
+        if not docs:
+            return {"doc_files": 0, "chunks": 0,
+                    "message": f"未在 {self.cfg.docs_dir()} 找到 PDF/Word 文档"}
+        ids, texts, sources = [], [], []
+        for text, source in docs:
+            chunks = split_text(
+                text, self.cfg.split["chunk_size"], self.cfg.split["chunk_overlap"]
+            )
+            for idx, chunk in enumerate(chunks):
+                ids.append(f"{source}::{idx}")
+                texts.append(chunk)
+                sources.append(source)
+        vectors = self.embedder.encode(texts)
+        self.store.add(ids, texts, vectors, sources)
+        self.store.build_bm25()
+        return {"doc_files": len(docs), "chunks": len(texts),
+                "message": f"重建完成:{len(docs)} 个文档,{len(texts)} 个片段"}
 
     def health(self) -> Dict[str, Any]:
         return {"llm": self.provider.health(), "doc_count": self.store.count()}

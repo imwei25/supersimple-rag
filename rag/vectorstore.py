@@ -23,6 +23,16 @@ class VectorStore:
         )
         self.bm25_path = self.persist_dir / "bm25.pkl"
 
+    def reset(self) -> None:
+        """清空知识库:删除并重建 collection,同时删除 BM25 索引文件。"""
+        name = self.collection.name
+        self.client.delete_collection(name)
+        self.collection = self.client.get_or_create_collection(
+            name=name, metadata={"hnsw:space": "cosine"}
+        )
+        if self.bm25_path.exists():
+            self.bm25_path.unlink()
+
     def add(self, ids: List[str], texts: List[str], vectors: List[List[float]],
             sources: List[str]) -> None:
         self.collection.add(

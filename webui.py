@@ -45,11 +45,22 @@ def respond(message, history):
     yield final
 
 
-demo = gr.ChatInterface(
-    fn=respond,
-    title="本地 RAG 问答 (Ollama minicpm5-1b)",
-    description="基于本地知识库的中文问答。先运行 python ingest.py 建库。",
-)
+def rebuild_kb():
+    try:
+        stats = engine.rebuild_index()
+        return f"✅ {stats['message']}(当前向量数 {engine.store.count()})"
+    except Exception as e:  # noqa: BLE001
+        return f"❌ 重建失败:{e}"
+
+
+with gr.Blocks(title="本地 RAG 问答 (Ollama minicpm5-1b)") as demo:
+    gr.Markdown("# 本地 RAG 问答 (Ollama minicpm5-1b)\n"
+                "基于本地知识库的中文问答。把 PDF/Word 放入 `docs_kb/` 后点「重建知识库」。")
+    with gr.Row():
+        rebuild_btn = gr.Button("🔄 重建知识库", variant="secondary", scale=0)
+        kb_status = gr.Markdown("")
+    rebuild_btn.click(fn=rebuild_kb, inputs=None, outputs=kb_status)
+    gr.ChatInterface(fn=respond)
 
 if __name__ == "__main__":
     demo.launch(server_name=cfg.server["web_host"], server_port=cfg.server["web_port"])
