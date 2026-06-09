@@ -5,6 +5,8 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install pyinstaller==6.11.1
+# setuptools 的 pkg_resources 依赖 backports.tarfile,缺它打包后会报 No module named 'backports'
+pip install "setuptools>=70" backports.tarfile
 # llama-cpp-python 用预编译 CPU wheel(否则源码编译需 C/C++ 编译器 + CMake)
 pip install llama-cpp-python==0.3.28 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 
