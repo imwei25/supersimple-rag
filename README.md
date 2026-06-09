@@ -38,3 +38,23 @@ pip install -r requirements.txt
 ## 局域网访问
 host 已设为 `0.0.0.0`。用 `ip addr`(Linux)/`ipconfig`(Windows)查本机 IP,
 确保防火墙放行 8001 / 7860 端口,同网段设备即可访问。
+
+## Windows CPU 打包与运行
+
+本项目支持两种生成后端:`ollama`(默认开发用)与 `llama_cpp`(进程内 GGUF,
+Windows CPU 免装 Ollama)。切换只改 `config.yaml` 的 `llm.provider`。
+
+### 在 Windows 上构建 exe
+PyInstaller 不能跨平台编译,需在 Windows 机器上构建:
+```powershell
+.\build_windows.ps1
+```
+产物在 `dist\知识库问答\`。把以下资源放入该目录:
+- `models\<生成模型>.gguf`、`models\bge-large-zh-v1.5\`、`models\bge-reranker-base\`
+- `config.yaml`(`embedding.device: cpu`、`retrieval.reranker_device: cpu`、`llm.provider: llama_cpp`、`llm.model` 指向上面的 GGUF 文件名)
+- 把 `dist_assets\` 里的两个 .bat 拷到 exe 同级
+
+### 终端用户使用
+1. 把 PDF/Word 放进 `docs_kb\`
+2. 双击「① 建库.bat」建立知识库
+3. 双击「② 启动.bat」→ 浏览器自动打开问答页(API 同时在 8001)

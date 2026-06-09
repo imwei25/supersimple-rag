@@ -1,0 +1,84 @@
+# app.py
+from __future__ import annotations
+import argparse
+import os
+import sys
+import threading
+from typing import List
+
+import rag.proxyfix  # noqa: F401
+from rag.runtime import base_dir
+
+
+def parse_mode(argv: List[str]) -> str:
+    ap = argparse.ArgumentParser(prog="知识库问答")
+    ap.add_argument("--mode", choices=["both", "api", "webui", "ingest"],
+                    default="both")
+    return ap.parse_args(argv).mode
+
+
+def _make_engine():
+    from rag.config import load_config
+    from rag.rag import RagEngine
+    return RagEngine(load_config())
+
+
+def _cfg():
+    from rag.config import load_config
+    return load_config()
+
+
+def _run_ingest() -> None:
+    from rag.config import load_config
+    from rag.rag import RagEngine
+    stats = RagEngine(load_config()).rebuild_index()
+    print(stats.get("message", stats))
+
+
+def _run_api(engine) -> None:
+    import uvicorn
+    from api import create_app
+    cfg = _cfg()
+    uvicorn.run(create_app(engine), host=cfg.server["api_host"],
+                port=cfg.server["api_port"])
+
+
+def _run_webui(engine) -> None:
+    from webui import create_demo
+    cfg = _cfg()
+    demo = create_demo(engine)
+    demo.queue()
+    demo.launch(server_name=cfg.server["web_host"],
+                server_port=cfg.server["web_port"], inbrowser=True)
+
+
+def _run_both(engine) -> None:
+    """API 在后台线程,WebUI 占主线程(Gradio 需在主线程 launch)。"""
+    import uvicorn
+    from api import create_app
+    cfg = _cfg()
+    api_app = create_app(engine)
+    t = threading.Thread(
+        target=lambda: uvicorn.run(
+            api_app, host=cfg.server["api_host"], port=cfg.server["api_port"],
+            log_level="warning"),
+        daemon=True)
+    t.start()
+    _run_webui(engine)
+
+
+def run(mode: str) -> None:
+    if mode == "ingest":
+        _run_ingest()
+        return
+    engine = _make_engine()
+    {"api": _run_api, "webui": _run_webui, "both": _run_both}[mode](engine)
+
+
+def main() -> None:
+    os.chdir(base_dir())          # 让 ./config.yaml ./models 等相对路径在打包后可用
+    run(parse_mode(sys.argv[1:]))
+
+
+if __name__ == "__main__":
+    main()
