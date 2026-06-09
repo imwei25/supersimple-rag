@@ -1,0 +1,4 @@
+# 进程内 llama.cpp 生成后端(CPU wheel)。Windows CPU 打包必装。
+llama-cpp-python==0.3.2
+# Windows 打包工具
+pyinstaller==6.11.1
