@@ -1,6 +1,6 @@
 # rag/config.py
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import yaml
 
@@ -14,6 +14,8 @@ class Config:
     split: dict
     server: dict
     paths: dict
+    # 入库阶段配置(语义增强等);旧 config.yaml 无此段时默认空,行为不变。
+    ingest: dict = field(default_factory=dict)
 
     def persist_dir(self) -> Path:
         return Path(self.vectorstore["persist_dir"]).resolve()

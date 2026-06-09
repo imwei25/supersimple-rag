@@ -4,3 +4,14 @@ chroma_db/
 .venv/
 venv/
 *.egg-info/
+
+# 模型权重(本地放置,勿入库)
+models/
+# 知识库源文件与扫描中间产物(体积大)
+docs_kb/_scanned_source/
+docs_kb/*.txt
+# 运行日志与评测/预览输出
+log*.txt
+chunks_preview.html
+eval_answers.json
+eval_sample_ids.json

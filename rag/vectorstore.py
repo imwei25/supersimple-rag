@@ -34,12 +34,20 @@ class VectorStore:
             self.bm25_path.unlink()
 
     def add(self, ids: List[str], texts: List[str], vectors: List[List[float]],
-            sources: List[str]) -> None:
+            sources: List[str], chapters: List[str] | None = None,
+            sections: List[str] | None = None) -> None:
+        chapters = chapters or [None] * len(ids)
+        sections = sections or [None] * len(ids)
+        metadatas = []
+        for s, ch, se in zip(sources, chapters, sections):
+            m: Dict[str, Any] = {"source": s}
+            if ch:                         # Chroma 不接受 None,空值直接省略
+                m["chapter"] = ch
+            if se:
+                m["section"] = se
+            metadatas.append(m)
         self.collection.add(
-            ids=ids,
-            documents=texts,
-            embeddings=vectors,
-            metadatas=[{"source": s} for s in sources],
+            ids=ids, documents=texts, embeddings=vectors, metadatas=metadatas,
         )
 
     def build_bm25(self) -> None:
@@ -47,12 +55,14 @@ class VectorStore:
         data = self.collection.get(include=["documents", "metadatas"])
         docs = data["documents"]
         ids = data["ids"]
-        sources = [m["source"] for m in data["metadatas"]]
+        metas = data["metadatas"]
+        sources = [m["source"] for m in metas]
         tokenized = [_tokenize(d) for d in docs]
         bm25 = BM25Okapi(tokenized) if tokenized else None
         with open(self.bm25_path, "wb") as f:
             pickle.dump(
-                {"bm25": bm25, "ids": ids, "docs": docs, "sources": sources},
+                {"bm25": bm25, "ids": ids, "docs": docs,
+                 "sources": sources, "metas": metas},
                 f,
             )
 
@@ -72,9 +82,27 @@ class VectorStore:
         )
         out = []
         for i, doc in enumerate(res["documents"][0]):
+            m = res["metadatas"][0][i]
             out.append({
                 "id": res["ids"][0][i],
                 "text": doc,
-                "source": res["metadatas"][0][i]["source"],
+                "source": m["source"],
+                "chapter": m.get("chapter"),
+                "section": m.get("section"),
             })
+        return out
+
+    def get_window(self, source: str, idx: int, radius: int) -> Dict[int, Dict[str, Any]]:
+        """取同一来源中 idx 两侧 radius 个相邻片段(含自身),返回 {idx: 记录}。
+        用于召回后对短片段做上下文扩充。缺失的 id 自动跳过。"""
+        wanted = [f"{source}::{i}" for i in range(max(0, idx - radius), idx + radius + 1)]
+        data = self.collection.get(ids=wanted, include=["documents", "metadatas"])
+        out: Dict[int, Dict[str, Any]] = {}
+        for _id, doc, m in zip(data["ids"], data["documents"], data["metadatas"]):
+            try:
+                i = int(_id.rsplit("::", 1)[1])
+            except (ValueError, IndexError):
+                continue
+            out[i] = {"id": _id, "text": doc, "source": m.get("source", source),
+                      "chapter": m.get("chapter"), "section": m.get("section")}
         return out
