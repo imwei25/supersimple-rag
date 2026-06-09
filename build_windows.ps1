@@ -16,6 +16,8 @@ pyinstaller --noconfirm app.spec
 New-Item -ItemType Directory -Force -Path "dist/知识库问答/models" | Out-Null
 New-Item -ItemType Directory -Force -Path "dist/知识库问答/docs_kb" | Out-Null
 Copy-Item config.yaml "dist/知识库问答/config.yaml" -Force
+# 把分发资源(两个 .bat + 使用说明)拷到 exe 同级
+Copy-Item "dist_assets/*" "dist/知识库问答/" -Force
 # 然后手动拷入 models/(GGUF + bge-large-zh-v1.5/ + bge-reranker-base/)
 Write-Host "构建完成。请把 GGUF 与 bge/reranker 模型放入 dist/知识库问答/models/,"
 Write-Host "并把 config.yaml 改为 CPU 配置:embedding.device: cpu、retrieval.reranker_device: cpu、"
