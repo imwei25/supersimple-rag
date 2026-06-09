@@ -9,6 +9,7 @@ datas, binaries, hiddenimports = [], [], []
 for pkg in ["gradio", "gradio_client", "safehttpx", "groovy",
             "chromadb", "sentence_transformers", "transformers",
             "tokenizers", "jieba", "llama_cpp",
+            "pdfplumber", "pdfminer", "pypdfium2",
             "jaraco", "backports", "setuptools"]:
     try:
         d, b, h = collect_all(pkg)
