@@ -15,3 +15,8 @@ log*.txt
 chunks_preview.html
 eval_answers.json
 eval_sample_ids.json
+
+# PyInstaller 构建暂存与产物
+build/
+build_pkg/
+dist/
