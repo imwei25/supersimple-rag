@@ -31,6 +31,14 @@ a = Analysis(
     hiddenimports=hiddenimports,
     excludes=["nvidia", "triton", "tensorboard"],   # CPU 瘦身:排除 CUDA 相关
     noarchive=False,
+    # Gradio 运行时要 inspect 自己的源码,必须以 .py 源码形式落到磁盘
+    # (否则报 No such file ... gradio\blocks_events.pyc)。
+    module_collection_mode={
+        "gradio": "py",
+        "gradio_client": "py",
+        "safehttpx": "py",
+        "groovy": "py",
+    },
 )
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True,
