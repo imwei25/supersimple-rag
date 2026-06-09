@@ -1,15 +1,22 @@
 llm:
-  provider: ollama
-  model: minicpm5-1b
-  ollama_base_url: http://localhost:11434
+  provider: llama_cpp        # ollama / llama_cpp
+  model: /media/wei/samsung/model/MiniCPM5-1B-F16.gguf
+  models_dir: ./models       # 当 model 为裸文件名时在此解析
+  n_ctx: 4096
+  n_threads: 0               # 0 = 自动按核数
+  n_gpu_layers: 0            # CPU 全 0
   temperature: 0.2
   max_tokens: 2096
+  # 仍兼容 ollama:把 provider 改回 ollama 并提供 ollama_base_url 即可
+  ollama_base_url: http://localhost:11434
 
 embedding:
   provider: sentence-transformers
-  model: ./models/bge-small-zh-v1.5
+  model: ./models/bge-large-zh-v1.5
   device: cuda
   batch_size: 32
+  # BGE-zh 查询指令前缀(仅作用于查询编码,文档入库不加)
+  query_prefix: "为这个句子生成表示以用于检索相关文章："
 
 vectorstore:
   persist_dir: ./chroma_db
@@ -17,14 +24,36 @@ vectorstore:
 
 retrieval:
   top_k: 4
-  vector_k: 10
-  bm25_k: 10
+  vector_k: 20
+  bm25_k: 20
   rrf_k: 60
   hybrid: true
+  # Cross-Encoder 重排:放大候选池后收窄到 top_k
+  rerank: true
+  rerank_candidates: 20
+  reranker_model: ./models/bge-reranker-base
+  reranker_device: cuda
+  # 短片段上下文扩充:召回片段短于 expand_min_chars 时,向同章相邻片段两端扩展
+  # 到约 expand_target_chars(优先补回主题/正文),每侧最多 expand_max_neighbors 个。
+  expand_short: true
+  expand_min_chars: 300
+  expand_target_chars: 600
+  expand_max_neighbors: 4
 
 split:
-  chunk_size: 1000
-  chunk_overlap: 180
+  # 语义切分:配合重排,小块更利于精确命中
+  chunk_size: 950
+  chunk_overlap: 100
+
+ingest:
+  # 语义增强:入库时用 LLM 为每个片段生成关键词+假设问题,提升口语化提问召回。
+  # 一次性离线成本(建库变慢),查询零额外开销。关闭设为 false 即恢复原行为。
+  enrich: false
+  # Layer A:确定性表格线性化,把表格每行拍平成「行头:值」句追加为【表格说明】,
+  # 提升表格内容的检索命中与小模型可读性(纯规则,不调 LLM)。
+  table_linearize: true
+  enrich_questions: 3
+  enrich_char_limit: 400
 
 server:
   api_host: 0.0.0.0
