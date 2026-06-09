@@ -1,5 +1,11 @@
+import pytest
 from pathlib import Path
 from rag.providers.llamacpp_provider import resolve_model_path, _iter_content, LlamaCppProvider
+
+
+def test_init_raises_when_model_missing():
+    with pytest.raises(FileNotFoundError):
+        LlamaCppProvider({"model": "/no/such/model.gguf"})
 
 
 def test_absolute_path_used_as_is():

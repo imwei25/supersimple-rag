@@ -37,7 +37,7 @@ class LlamaCppProvider(LLMProvider):
         if not self.model_path.exists():
             raise FileNotFoundError(f"GGUF 模型不存在: {self.model_path}")
         from llama_cpp import Llama          # 延迟导入,避免无该依赖时整体不可用
-        n_threads = cfg.get("n_threads") or None   # 0/None -> 自动按核数
+        n_threads = cfg.get("n_threads") or None   # falsy(0/None/缺省)→ None,由 llama.cpp 自动选核数
         self.llm = Llama(
             model_path=str(self.model_path),
             n_ctx=cfg.get("n_ctx", 4096),
