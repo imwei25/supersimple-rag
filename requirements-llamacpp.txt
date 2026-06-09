@@ -1,4 +1,6 @@
-# 进程内 llama.cpp 生成后端(CPU wheel)。Windows CPU 打包必装。
-llama-cpp-python==0.3.2
+# 进程内 llama.cpp 生成后端。Windows CPU 打包必装。
+# 注意:务必用预编译 CPU wheel 安装,否则会从源码编译(需 C/C++ 编译器 + CMake):
+#   pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+llama-cpp-python==0.3.28
 # Windows 打包工具
 pyinstaller==6.11.1

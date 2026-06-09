@@ -4,7 +4,9 @@
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements-llamacpp.txt
+pip install pyinstaller==6.11.1
+# llama-cpp-python 用预编译 CPU wheel(否则源码编译需 C/C++ 编译器 + CMake)
+pip install llama-cpp-python==0.3.28 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 
 pyinstaller --noconfirm app.spec
 
@@ -14,4 +16,5 @@ New-Item -ItemType Directory -Force -Path "dist/知识库问答/docs_kb" | Out-N
 Copy-Item config.yaml "dist/知识库问答/config.yaml" -Force
 # 然后手动拷入 models/(GGUF + bge-large-zh-v1.5/ + bge-reranker-base/)
 Write-Host "构建完成。请把 GGUF 与 bge/reranker 模型放入 dist/知识库问答/models/,"
-Write-Host "并把 config.yaml 的 device 改为 cpu、model 改为 models 下的 GGUF 文件名。"
+Write-Host "并把 config.yaml 改为 CPU 配置:embedding.device: cpu、retrieval.reranker_device: cpu、"
+Write-Host "llm.provider: llama_cpp、llm.model 改为 models 下的 GGUF 文件名。"

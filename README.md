@@ -51,7 +51,7 @@ PyInstaller 不能跨平台编译,需在 Windows 机器上构建:
 ```
 产物在 `dist\知识库问答\`。把以下资源放入该目录:
 - `models\<生成模型>.gguf`、`models\bge-large-zh-v1.5\`、`models\bge-reranker-base\`
-- `config.yaml`(`embedding.device: cpu`、`llm.provider: llama_cpp`、`llm.model` 指向上面的 GGUF 文件名)
+- `config.yaml`(`embedding.device: cpu`、`retrieval.reranker_device: cpu`、`llm.provider: llama_cpp`、`llm.model` 指向上面的 GGUF 文件名)
 - 把 `dist_assets\` 里的两个 .bat 拷到 exe 同级
 
 ### 终端用户使用
