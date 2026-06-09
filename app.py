@@ -77,7 +77,18 @@ def run(mode: str) -> None:
 
 def main() -> None:
     os.chdir(base_dir())          # 让 ./config.yaml ./models 等相对路径在打包后可用
-    run(parse_mode(sys.argv[1:]))
+    try:
+        run(parse_mode(sys.argv[1:]))
+    except Exception:             # noqa: BLE001
+        # 打包后双击运行时,异常会让控制台瞬间关闭。冻结态下打印完整堆栈并停住,
+        # 方便直接看到报错(开发态不拦截,交给正常 Traceback)。
+        import traceback
+        traceback.print_exc()
+        if getattr(sys, "frozen", False):
+            print("\n程序启动失败(见上方错误)。常见原因:config.yaml 的 device 未改为 cpu、"
+                  "llm.model 未指向 models 下的 GGUF 文件名,或 models 目录缺文件。")
+            input("\n按回车键关闭…")
+        raise
 
 
 if __name__ == "__main__":
