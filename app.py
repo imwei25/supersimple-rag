@@ -31,8 +31,13 @@ def _cfg():
 def _run_ingest() -> None:
     from rag.config import load_config
     from rag.rag import RagEngine
-    stats = RagEngine(load_config()).rebuild_index()
-    print(stats.get("message", stats))
+    engine = RagEngine(load_config())
+    # 逐阶段打印进度(含“编码向量 N/总数”),CPU 上较慢时让控制台有反馈
+    for ev in engine.rebuild_index_iter():
+        if ev["type"] == "status":
+            print(ev["msg"], flush=True)
+        elif ev["type"] == "done":
+            print(ev["stats"].get("message", ev["stats"]), flush=True)
 
 
 def _run_api(engine) -> None:

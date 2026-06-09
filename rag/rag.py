@@ -112,8 +112,15 @@ class RagEngine:
                            "msg": f"🤖 生成关键词/假设问题 {done}/{total} "
                                   f"(复用缓存 {reused},新生成 {newly})"}
 
-        yield {"type": "status", "msg": "🧮 正在编码向量…"}
-        vectors = self.embedder.encode(texts)
+        yield {"type": "status", "msg": f"🧮 正在编码向量 0/{len(texts)}…"}
+        enc = self.embedder.encode_iter(texts)
+        while True:
+            try:
+                done, total = next(enc)
+            except StopIteration as e:
+                vectors = e.value
+                break
+            yield {"type": "status", "msg": f"🧮 正在编码向量 {done}/{total}…"}
 
         # 全部就绪后再清空旧库并写入,空窗仅在此一瞬
         yield {"type": "status", "msg": "💾 正在写入索引…"}
