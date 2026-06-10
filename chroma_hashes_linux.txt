@@ -1,0 +1,7 @@
+# Linux 端 chroma_db 基准指纹  md5  size  path
+9f9985448203df21250f357c0e584553  6807252  chroma_db/2c03f24e-10bf-4816-85d2-c1e3be948c09/data_level0.bin
+51ee844646df9241b676ede139734ef4  100  chroma_db/2c03f24e-10bf-4816-85d2-c1e3be948c09/header.bin
+ff98f01c988269d1ede5008cec36ae32  218372  chroma_db/2c03f24e-10bf-4816-85d2-c1e3be948c09/index_metadata.pickle
+9e8bf98ed86cc54163ec8e82d961b785  6428  chroma_db/2c03f24e-10bf-4816-85d2-c1e3be948c09/length.bin
+b55efdedb88f79dbc8b88b2e84dd4c8e  14520  chroma_db/2c03f24e-10bf-4816-85d2-c1e3be948c09/link_lists.bin
+da3eb0677e8920d13f66f882fa5297eb  31424512  chroma_db/chroma.sqlite3
