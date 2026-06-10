@@ -85,11 +85,22 @@ def rrf_fuse(vector_ids: List[str], bm25_ids: List[str], rrf_k: int = 60) -> Lis
 
 
 class Retriever:
-    def __init__(self, store: VectorStore, embedder: Embedder, cfg: dict, reranker=None):
+    def __init__(self, store: VectorStore, embedder: Embedder, cfg: dict,
+                 reranker=None, reranker_factory=None):
         self.store = store
         self.embedder = embedder
         self.cfg = cfg
-        self.reranker = reranker
+        # 懒加载重排器:首次检索时才构建(传 factory 时);建库阶段不触发,省内存。
+        self._reranker = reranker
+        self._reranker_factory = reranker_factory
+        self._reranker_built = reranker is not None or reranker_factory is None
+
+    @property
+    def reranker(self):
+        if not self._reranker_built:
+            self._reranker = self._reranker_factory()
+            self._reranker_built = True
+        return self._reranker
 
     def _bm25_search(self, query: str, k: int) -> List[Dict[str, Any]]:
         data = self.store.load_bm25()

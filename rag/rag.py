@@ -35,9 +35,17 @@ class RagEngine:
             query_prefix=cfg.embedding.get("query_prefix", ""),
         )
         self.store = VectorStore(cfg.persist_dir(), cfg.vectorstore["collection"])
-        reranker = make_reranker(cfg.retrieval)
-        self.retriever = Retriever(self.store, self.embedder, cfg.retrieval, reranker)
-        self.provider = make_provider(cfg.llm)
+        # 懒加载:重排模型与 LLM 仅在查询时才加载。建库(ingest)只需向量模型,
+        # 不再白白把重排(~1G)和 LLM(~1-2G)读进内存——显著降低建库内存,避免低配机 swap。
+        self.retriever = Retriever(self.store, self.embedder, cfg.retrieval,
+                                   reranker_factory=lambda: make_reranker(cfg.retrieval))
+        self._provider = None
+
+    @property
+    def provider(self):
+        if self._provider is None:
+            self._provider = make_provider(self.cfg.llm)
+        return self._provider
 
     def _build_prompt(self, question: str, hits: List[Dict[str, Any]]) -> str:
         context = "\n\n".join(

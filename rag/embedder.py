@@ -21,7 +21,7 @@ class Embedder:
         )
         return [v.tolist() for v in vectors]
 
-    def encode_iter(self, texts: List[str], batch: int = 256):
+    def encode_iter(self, texts: List[str], batch: int = 64):
         """分批编码,每批 yield (已完成数, 总数) 作为进度;
         全部完成后通过 return 返回向量列表(调用方用 `yield from` 或捕获
         StopIteration.value 取回)。CPU 上编码慢,用它驱动进度显示。"""
