@@ -1,0 +1,6 @@
+# 在 PowerShell 里、cd 到 dist\知识库问答\ 后运行(生成 chroma_hashes_win.txt):
+
+Get-ChildItem -Recurse chroma_db -Include *.bin,*.pickle,*.sqlite3 | ForEach-Object { '{0}  {1}  {2}' -f (Get-FileHash $_ -Algorithm MD5).Hash.ToLower(), $_.Length, $_.Name } | Out-File -Encoding utf8 "$PWD\chroma_hashes_win.txt"
+
+# 然后打开看:
+notepad "$PWD\chroma_hashes_win.txt"
