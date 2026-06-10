@@ -13,17 +13,22 @@ class OllamaProvider(LLMProvider):
         self.model = cfg["model"]
         self.temperature = cfg.get("temperature", 0.3)
         self.max_tokens = cfg.get("max_tokens", 1024)
+        # 可选采样参数:config 里写了才透传给 ollama options,否则用其默认
+        self.sampling = {k: cfg[k] for k in ("repeat_penalty", "top_p", "top_k", "min_p")
+                         if cfg.get(k) is not None}
 
     def stream(self, prompt: str) -> Iterator[str]:
         url = f"{self.base_url}/api/generate"
+        options = {
+            "temperature": self.temperature,
+            "num_predict": self.max_tokens,
+            **self.sampling,
+        }
         payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": True,
-            "options": {
-                "temperature": self.temperature,
-                "num_predict": self.max_tokens,
-            },
+            "options": options,
         }
         try:
             with requests.post(url, json=payload, stream=True, timeout=300) as r:
