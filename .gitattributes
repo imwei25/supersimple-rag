@@ -6,3 +6,4 @@ chroma_db/** -text
 *.sqlite3 -text
 *.gguf -text
 *.ps1 -text
+*.bat -text

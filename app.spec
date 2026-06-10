@@ -42,6 +42,8 @@ a = Analysis(
     },
 )
 pyz = PYZ(a.pure)
+# exe/输出目录用 ASCII 名(doctor-t),避免中文路径在 .bat/.ps1/cmd 各种编码下踩坑。
+# 界面/窗口标题仍是中文(在代码里),不影响品牌。
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True,
-          name="知识库问答", console=True)
-coll = COLLECT(exe, a.binaries, a.datas, name="知识库问答")
+          name="doctor-t", console=True)
+coll = COLLECT(exe, a.binaries, a.datas, name="doctor-t")

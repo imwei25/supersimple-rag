@@ -7,7 +7,7 @@ import threading
 from typing import List
 
 import rag.proxyfix  # noqa: F401
-from rag.runtime import base_dir
+from rag.runtime import app_root
 
 
 def parse_mode(argv: List[str]) -> str:
@@ -81,7 +81,7 @@ def run(mode: str) -> None:
 
 
 def main() -> None:
-    os.chdir(base_dir())          # 让 ./config.yaml ./models 等相对路径在打包后可用
+    os.chdir(app_root())          # 切到数据根目录(向上找 config.yaml),支持程序/数据分家
     try:
         run(parse_mode(sys.argv[1:]))
     except Exception:             # noqa: BLE001
