@@ -41,12 +41,16 @@ def format_chunks(chunks: list) -> str:
 
 def create_demo(engine: RagEngine):
     def respond(message, history):
+        # 第一个 token 之前有一段纯 CPU 静默(编码问题→重排候选→LLM prefill),
+        # 先给即时占位提示,让界面立刻有反馈;拿到首个 token 后再正常流式刷新。
+        yield "🔍 正在检索相关内容…"
         answer = ""
         sources = []
         chunks = []
         for ev in engine.answer_stream(message):
             if ev["type"] == "chunks":
                 chunks = ev["data"]
+                yield "💭 已检索到资料,正在生成回答…"
             elif ev["type"] == "token":
                 answer += ev["data"]
                 yield format_think(answer)
