@@ -1,4 +1,4 @@
-# build_windows.ps1 —— 在 Windows 上构建 onedir 包
+﻿# build_windows.ps1 —— 在 Windows 上构建 onedir 包
 # 前置:已装 Python 3.10、已建好 .venv 并装 requirements.txt + requirements-llamacpp.txt
 # 重要:torch 用 CPU-only wheel,否则包会膨胀数 GB
 python -m pip install --upgrade pip

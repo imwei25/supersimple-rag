@@ -5,3 +5,4 @@ chroma_db/** -text
 *.pickle -text
 *.sqlite3 -text
 *.gguf -text
+*.ps1 -text
