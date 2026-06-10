@@ -1,0 +1,7 @@
+# 二进制文件:禁止 git 做任何换行/文本转换,保证跨平台字节一致
+chroma_db/** -text
+*.bin -text
+*.pkl -text
+*.pickle -text
+*.sqlite3 -text
+*.gguf -text
