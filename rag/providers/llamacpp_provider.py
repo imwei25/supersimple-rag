@@ -34,6 +34,9 @@ class LlamaCppProvider(LLMProvider):
             cfg["model"], cfg.get("models_dir", "./models"))
         self.temperature = cfg.get("temperature", 0.2)
         self.max_tokens = cfg.get("max_tokens", 2096)
+        # 可选采样参数:config 里写了才透传,否则用 llama.cpp 默认(如 repeat_penalty=1.1)
+        self.sampling = {k: cfg[k] for k in ("repeat_penalty", "top_p", "top_k", "min_p")
+                         if cfg.get(k) is not None}
         if not self.model_path.exists():
             raise FileNotFoundError(f"GGUF 模型不存在: {self.model_path}")
         from llama_cpp import Llama          # 延迟导入,避免无该依赖时整体不可用
@@ -53,6 +56,7 @@ class LlamaCppProvider(LLMProvider):
                 stream=True,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
+                **self.sampling,
             )
             yield from _iter_content(chunks)
         except Exception as e:  # noqa: BLE001

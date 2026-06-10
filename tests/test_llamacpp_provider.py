@@ -35,8 +35,12 @@ def test_iter_content_skips_empty():
 
 
 class _FakeLlama:
-    def create_chat_completion(self, messages, stream, temperature, max_tokens):
+    def __init__(self):
+        self.kw = None
+
+    def create_chat_completion(self, messages, stream, temperature, max_tokens, **kw):
         assert stream is True
+        self.kw = kw
         return [_fake_chunk("答"), _fake_chunk("案")]
 
 
@@ -47,9 +51,27 @@ def test_provider_stream_with_injected_llm(tmp_path):
     prov.model_path = f
     prov.temperature = 0.2
     prov.max_tokens = 16
+    prov.sampling = {}
     prov.llm = _FakeLlama()
     assert "".join(prov.stream("问题")) == "答案"
     assert prov.health() is True
+
+
+def test_sampling_params_read_from_cfg_and_passed(tmp_path):
+    f = tmp_path / "m.gguf"
+    f.write_text("x")
+    prov = LlamaCppProvider.__new__(LlamaCppProvider)
+    prov.model_path = f
+    prov.temperature = 0.2
+    prov.max_tokens = 16
+    # 模拟 __init__ 对可选采样参数的提取逻辑
+    cfg = {"repeat_penalty": 1.3, "top_p": 0.9, "top_k": 40, "foo": 1}
+    prov.sampling = {k: cfg[k] for k in ("repeat_penalty", "top_p", "top_k", "min_p")
+                     if cfg.get(k) is not None}
+    llm = _FakeLlama()
+    prov.llm = llm
+    "".join(prov.stream("问题"))
+    assert llm.kw == {"repeat_penalty": 1.3, "top_p": 0.9, "top_k": 40}
 
 
 def test_health_false_when_model_missing():
