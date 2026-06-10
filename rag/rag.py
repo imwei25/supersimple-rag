@@ -2,8 +2,11 @@
 from __future__ import annotations
 from typing import Iterator, List, Dict, Any
 
+import pickle
+import logging
+
 from rag.config import Config
-from rag.embedder import Embedder
+from rag.embedder import Embedder, text_key as embed_text_key
 from rag.vectorstore import VectorStore
 from rag.retriever import Retriever
 from rag.reranker import make_reranker
@@ -11,6 +14,8 @@ from rag.loader import load_documents
 from rag.splitter import split_records
 from rag.enrich import enrich_texts, enrich_texts_iter
 from rag.tables import augment_chunk_tables
+
+logger = logging.getLogger(__name__)
 from rag.providers.factory import make_provider
 
 PROMPT_TEMPLATE = """你是一个严谨的中文问答助手。请仅根据下面的【已知信息】回答【问题】。
@@ -46,6 +51,29 @@ class RagEngine:
         if self._provider is None:
             self._provider = make_provider(self.cfg.llm)
         return self._provider
+
+    @staticmethod
+    def _load_embed_cache(path, model_name: str) -> Dict[str, Any]:
+        """读取向量缓存;模型不一致或读取失败则返回空(自动全量重编)。"""
+        if path.exists():
+            try:
+                data = pickle.loads(path.read_bytes())
+                if data.get("model") == model_name:
+                    return data.get("vectors", {})
+            except Exception as e:  # noqa: BLE001
+                logger.warning("向量缓存读取失败,忽略: %s", e)
+        return {}
+
+    @staticmethod
+    def _save_embed_cache(path, model_name: str, cache: Dict[str, Any],
+                          texts: List[str]) -> None:
+        """落盘向量缓存;按本次出现的片段裁剪,避免无限增长。失败不阻断建库。"""
+        keep = {embed_text_key(t) for t in texts}
+        pruned = {k: v for k, v in cache.items() if k in keep}
+        try:
+            path.write_bytes(pickle.dumps({"model": model_name, "vectors": pruned}))
+        except Exception as e:  # noqa: BLE001
+            logger.warning("向量缓存写入失败: %s", e)
 
     def _build_prompt(self, question: str, hits: List[Dict[str, Any]]) -> str:
         context = "\n\n".join(
@@ -120,15 +148,24 @@ class RagEngine:
                            "msg": f"🤖 生成关键词/假设问题 {done}/{total} "
                                   f"(复用缓存 {reused},新生成 {newly})"}
 
-        yield {"type": "status", "msg": f"🧮 正在编码向量 0/{len(texts)}…"}
-        enc = self.embedder.encode_iter(texts)
+        # 向量缓存:文本未变的片段复用已编码向量,避免每次重建全量重算。
+        # 按 embedding 模型隔离(换模型则缓存失效,自动全量重编)。
+        embed_cache_path = self.cfg.persist_dir() / "embed_cache.pkl"
+        model_name = self.cfg.embedding["model"]
+        cache = self._load_embed_cache(embed_cache_path, model_name)
+        to_encode = sum(1 for t in texts if embed_text_key(t) not in cache)
+        yield {"type": "status",
+               "msg": f"🧮 正在编码向量 0/{to_encode}(复用缓存 {len(texts) - to_encode})…"}
+        enc = self.embedder.encode_cached_iter(texts, cache)
         while True:
             try:
                 done, total = next(enc)
             except StopIteration as e:
                 vectors = e.value
                 break
-            yield {"type": "status", "msg": f"🧮 正在编码向量 {done}/{total}…"}
+            yield {"type": "status",
+                   "msg": f"🧮 正在编码向量 {done}/{total}(复用缓存 {len(texts) - total})…"}
+        self._save_embed_cache(embed_cache_path, model_name, cache, texts)
 
         # 全部就绪后再清空旧库并写入,空窗仅在此一瞬
         yield {"type": "status", "msg": "💾 正在写入索引…"}
