@@ -18,7 +18,7 @@ for pkg in ["gradio", "gradio_client", "safehttpx", "groovy",
         print(f"[app.spec] collect_all({pkg}) 跳过: {e}")
 
 binaries += collect_dynamic_libs("llama_cpp")   # llama.dll / ggml*.dll
-hiddenimports += ["onnxruntime", "hnswlib", "tiktoken_ext",
+hiddenimports += ["onnxruntime", "hnswlib",
                   "uvicorn.logging", "uvicorn.protocols",
                   "uvicorn.protocols.http.auto", "uvicorn.lifespan.on",
                   "backports", "backports.tarfile",
